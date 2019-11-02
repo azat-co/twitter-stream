@@ -13,6 +13,7 @@
     "express": "4.17.1",
     "socket.io": "2.3.0",
     "twit": "2.2.11",
+    "url-unshort": "5.0.0",
     "workerpool": "5.0.1"
   }
 }

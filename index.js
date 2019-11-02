@@ -2,7 +2,6 @@ const twit = require('twit');
 const worker = require('worker_threads');
 const workerpool = require('workerpool');
 const pool = workerpool.pool();
-const emojiHash=require('./emoji-hash.json');
 
 
 const twitInstance = new twit({
@@ -15,11 +14,14 @@ const twitInstance = new twit({
 
 const emojiFrequencyHash={};
 let tweetCount = 0;
+let imageCount = 0;
+
 let urlCount = 0;
 let emojiCount = 0;
 const d1 = Date.now();
 const stream = twitInstance.stream('statuses/sample', { language: 'en' })
-const top
+const emojiData = require('emoji-data');
+
 const {
   Worker,
   isMainThread,
@@ -29,36 +31,19 @@ const {
 
 const containsEmoji = (text) => {
   const emojiData = require('emoji-data');
+  const emojiHash=require('../../../emoji-hash.json');
+
   // console.log(emojiData.scan(text).length)'
   const emojis=emojiData.scan(text);
-  for (let emoji of emojis) {
-    if (emojiFrequencyHash[emoji.unified]) {
-      emojiFrequencyHash[emoji.unified]+=1;
-    } else {
-      emojiFrequencyHash[emoji.unified]=1;
-    }
-  }
-  if (emojiData.scan(text).length>0) {
-    return true;
-  } else { // the emoji-data module misses some emojis so we go thru the list from emoji-data
-    for (let char of text) {
-      let hexOfChar=char.charCodeAt(0).toString(16);
-      if (emojiHash[hexOfChar]) {
-        return true;
-      }
-    }
-    return false;
-  }
+  return emojis;
 }
-
-const containsUrl = (text) => {
-  // console.log(text);
+const containsUrls = (text) => {
   const urlRegExpression = /[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)?/gi;
   const urlRegExp = new RegExp(urlRegExpression);
-
-  if (text.match(urlRegExp)) return true;
-  return false;
+  const urls=text.match(urlRegExp) || [];
+  return urls;
 }
+
 
 if (isMainThread) {
 
@@ -71,19 +56,63 @@ if (isMainThread) {
     console.log('Avg per minute:', (60 * tweetPerSecond).toFixed(2));
     console.log('Avg per hour:', (60 * 60 * tweetPerSecond).toFixed(2));
     console.log('Percent of tweets that contain a URL:', ((urlCount / tweetCount) * 100).toFixed(2));
+    console.log('Percent of tweets that contain link to pic or instagram:', ((imageCount / tweetCount) * 100).toFixed(2));
     console.log('Percent of tweets that contain an emoji:', ((emojiCount / tweetCount) * 100).toFixed(2));
-    console.log('Top emojis', Object.keys(emojiFrequencyHash).sort((a, b)=> (emojiFrequencyHash[a]>emojiFrequencyHash[b])?1:-1));
+    console.log('Top emojis', Object.keys(emojiFrequencyHash)
+      .sort((a, b)=> (emojiFrequencyHash[a]>emojiFrequencyHash[b])?1:-1)
+      .slice(0,10)
+      .map((emojiUni)=>emojiData.from_unified(emojiUni).render()));
 
-    pool.exec(containsUrl, [tweet.text])
-      .then((result) => {
-        // console.log('contains link', result, tweet.text); // outputs 7
-        if (result) urlCount++;
-      })
+    pool.exec(containsUrls, [tweet.text])
+    .then((urls)=>{
+      if (urls.length>0) urlCount++;
+      const imageRegExpression = /(pic.twitter|instagram)\.com/ig;
+      const imageRegExp = new RegExp(imageRegExpression);
+      let uu = require('url-unshort')();
+      for (let url of urls) {
+        uu.expand('http://'+url)
+        .then(url => {
+          if (url) console.log(`Original url is: ${url}`);
+          if (url.match(imageRegExp)) {
+            imageCount++;
+          }
+          // no shortening service or an unknown one is used
+          // else console.log('This url can\'t be expanded');
+        })
+        .catch(err => console.log(err));
+      }
+      // return false;
+    })
+      // .then((result)=>{
+      //   if (result) {
+      //     imageCount++;
+      //   }
+      // })
       .catch((err) => {
         console.error(err);
       })
-    pool
-      .exec(containsEmoji, [tweet.text])
+    pool.exec(containsEmoji, [tweet.text])
+      .then((emojis)=>{
+        for (let emoji of emojis) {
+          if (emojiFrequencyHash[emoji.unified]) {
+            emojiFrequencyHash[emoji.unified]+=1;
+          } else {
+            emojiFrequencyHash[emoji.unified]=1;
+          }
+        }
+        if (emojis.length>0) {
+          return true;
+        }
+        // else { // the emoji-data module misses some emojis so we go thru the list from emoji-data
+        //   for (let char of text) {
+        //     let hexOfChar=char.charCodeAt(0).toString(16);
+        //     if (emojiHash[hexOfChar]) {
+        //       return true;
+        //     }
+        //   }
+        //   return false;
+        // }
+      })
       .then((result)=>{
         // console.log('contains emoji', result, tweet.text)
         if (result) {
