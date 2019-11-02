@@ -27,9 +27,10 @@ const containsEmoji = (text) => {
   const emojis = emojiData.scan(text);
   return emojis;
 }
-const containsUrls = (text) => {
-  const urlRegExpression = /[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)?/gi;
-  const urlRegExp = new RegExp(urlRegExpression);
+const urlRegExpression = /[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)?/gi;
+const urlRegExp = new RegExp(urlRegExpression);
+
+const containsUrls = (text, urlRegExp) => {
   const urls = text.match(urlRegExp) || [];
   return urls;
 }
@@ -50,7 +51,7 @@ stream.on('tweet', (tweet) => {
     .slice(0, 10)
     .map((emojiUni) => emojiData.from_unified(emojiUni).render()));
 
-  pool.exec(containsUrls, [tweet.text])
+  pool.exec(containsUrls, [tweet.text, urlRegExp])
     .then((urls) => {
       if (urls.length > 0) urlCount++;
       const imageRegExpression = /(pic.twitter|instagram)\.com/ig;
