@@ -55,9 +55,9 @@ if (isMainThread) {
     console.log('Avg per second:', (tweetPerSecond).toFixed(2));
     console.log('Avg per minute:', (60 * tweetPerSecond).toFixed(2));
     console.log('Avg per hour:', (60 * 60 * tweetPerSecond).toFixed(2));
-    console.log('Percent of tweets that contain a URL:', ((urlCount / tweetCount) * 100).toFixed(2));
-    console.log('Percent of tweets that contain link to pic or instagram:', ((imageCount / tweetCount) * 100).toFixed(2));
-    console.log('Percent of tweets that contain an emoji:', ((emojiCount / tweetCount) * 100).toFixed(2));
+    console.log('Tweets that contain a URL:', ((urlCount / tweetCount) * 100).toFixed(2));
+    console.log('Tweets that contain link to pic or instagram:', ((imageCount / tweetCount) * 100).toFixed(2));
+    console.log('Tweets that contain an emoji: %s%', ((emojiCount / tweetCount) * 100).toFixed(2));
     console.log('Top emojis', Object.keys(emojiFrequencyHash)
       .sort((a, b)=> (emojiFrequencyHash[a]>emojiFrequencyHash[b])?1:-1)
       .slice(0,10)
