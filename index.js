@@ -2,6 +2,7 @@ const twit = require('twit');
 const worker = require('worker_threads');
 const workerpool = require('workerpool');
 const pool = workerpool.pool();
+const clear = require('clear');
 
 const twitInstance = new twit({
   consumer_key: 'CDbHmvzpaY52o8FRk5YYBegLk',
@@ -32,7 +33,6 @@ const urlRegExpression = /[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-
 const urlRegExp = new RegExp(urlRegExpression);
 const imageRegExpression = /(pic.twitter|instagram)\.com/ig;
 const imageRegExp = new RegExp(imageRegExpression);
-let uu = require('url-unshort')();
 
 const containsUrls = (text, urlRegExp) => {
   const urls = text.match(urlRegExp) || [];
@@ -40,6 +40,7 @@ const containsUrls = (text, urlRegExp) => {
 }
 
 stream.on('tweet', (tweet) => {
+  clear();
   tweetCount++;
   console.log('Total stream tweet count:', tweetCount);
   const d2 = Date.now();
@@ -50,29 +51,45 @@ stream.on('tweet', (tweet) => {
   console.log('Tweets that contain a URL: %s%', ((urlCount / tweetCount) * 100).toFixed(2));
   console.log('Tweets that contain link to pic or instagram: %s%', ((imageCount / tweetCount) * 100).toFixed(2));
   console.log('Tweets that contain an emoji: %s%', ((emojiCount / tweetCount) * 100).toFixed(2));
+  // console.log(emojiFrequencyHash)
   console.log('Top emojis', Object.keys(emojiFrequencyHash)
-    .sort((a, b) => (emojiFrequencyHash[a] > emojiFrequencyHash[b]) ? 1 : -1)
+    .sort((a, b) => (emojiFrequencyHash[a] < emojiFrequencyHash[b]) ? 1 : -1)
     .slice(0, 10)
     .map((emojiUni) => emojiData.from_unified(emojiUni).render()));
 
-  pool.exec(containsUrls, [tweet.text, urlRegExp])
-    .then((urls) => {
-      if (urls.length > 0) urlCount++;
-      for (let url of urls) {
-        uu.expand('http://' + url)
-          .then(expandedUrl => {
-            // if (expandedUrl) console.log(`Original url is: ${expandedUrl}`);
-            if (url.match(imageRegExp) || expandedUrl.match(imageRegExp)) {
-              imageCount++;
-            }
-          })
-          .catch(err => console.log(err));
-      }
-    })
-    .catch((err) => {
-      console.error(err);
-    })
+  console.log(`
 
+
+**** STREAM *****`);
+  console.log('Text:', tweet.text);
+
+  // Counting URLs
+  const urls = containsUrls(tweet.text, urlRegExp);
+  if (urls.length > 0) urlCount++;
+  console.log(`
+URLs:`);
+  // Counting images
+  for (let url of urls) {
+    if (url.match(imageRegExp)) {
+      imageCount++;
+    } else {
+      pool.exec((link)=>{
+        const uu = require('url-unshort')()
+        return uu.expand(link);
+      }, ['http://' + url])
+        .then(expandedUrl => {
+          if (expandedUrl) {
+            console.log('Short to expanded/original URL: ', url, ' => ', expandedUrl);
+          }
+          if (expandedUrl && expandedUrl.match(imageRegExp)) {
+            imageCount++;
+          }
+        })
+        .catch(err => console.log(err));
+    }
+  }
+
+  // Counting emojis
   pool.exec(containsEmoji, [tweet.text])
     .then((emojis) => {
       for (let emoji of emojis) {
