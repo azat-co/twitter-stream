@@ -21,10 +21,10 @@ let emojiCount = 0;
 const d1 = Date.now();
 const stream = twitInstance.stream('statuses/sample', { language: 'en' })
 const emojiData = require('emoji-data');
+const emojiHash = require('./emoji-hash.json');
 
 const containsEmoji = (text) => {
   const emojiData = require('emoji-data');
-  const emojiHash = require('../../../emoji-hash.json');
   const emojis = emojiData.scan(text);
   return emojis;
 }
@@ -102,15 +102,15 @@ URLs:`);
       if (emojis.length > 0) {
         return true;
       }
-      // else { // the emoji-data module misses some emojis so we go thru the list from emoji-data
-      //   for (let char of text) {
-      //     let hexOfChar=char.charCodeAt(0).toString(16);
-      //     if (emojiHash[hexOfChar]) {
-      //       return true;
-      //     }
-      //   }
-      //   return false;
-      // }
+      else { // the emoji-data module misses some emojis so we go thru the list from emoji-data
+        for (let char of tweet.text) {
+          let hexOfChar=char.charCodeAt(0).toString(16);
+          if (emojiHash[hexOfChar]) {
+            return true;
+          }
+        }
+        return false;
+      }
     })
     .then((result) => {
       if (result) {
