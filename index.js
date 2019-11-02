@@ -13,12 +13,13 @@ const twitInstance = new twit({
   timeout_ms: 60 * 1000, // optional HTTP request timeout to apply to all requests.
 });
 
+const emojiFrequencyHash={};
 let tweetCount = 0;
 let urlCount = 0;
 let emojiCount = 0;
 const d1 = Date.now();
 const stream = twitInstance.stream('statuses/sample', { language: 'en' })
-
+const top
 const {
   Worker,
   isMainThread,
@@ -28,15 +29,26 @@ const {
 
 const containsEmoji = (text) => {
   const emojiData = require('emoji-data');
-  // console.log(emojiData.scan(text).length)
-  return (emojiData.scan(text).length>0);
-  // for (let char of text) {
-  //   let hexOfChar=char.charCodeAt(0).toString(16);
-  //   if (emojiHash[hexOfChar]) {
-  //     return true;
-  //   }
-  // }
-  // return false;
+  // console.log(emojiData.scan(text).length)'
+  const emojis=emojiData.scan(text);
+  for (let emoji of emojis) {
+    if (emojiFrequencyHash[emoji.unified]) {
+      emojiFrequencyHash[emoji.unified]+=1;
+    } else {
+      emojiFrequencyHash[emoji.unified]=1;
+    }
+  }
+  if (emojiData.scan(text).length>0) {
+    return true;
+  } else { // the emoji-data module misses some emojis so we go thru the list from emoji-data
+    for (let char of text) {
+      let hexOfChar=char.charCodeAt(0).toString(16);
+      if (emojiHash[hexOfChar]) {
+        return true;
+      }
+    }
+    return false;
+  }
 }
 
 const containsUrl = (text) => {
@@ -60,6 +72,7 @@ if (isMainThread) {
     console.log('Avg per hour:', (60 * 60 * tweetPerSecond).toFixed(2));
     console.log('Percent of tweets that contain a URL:', ((urlCount / tweetCount) * 100).toFixed(2));
     console.log('Percent of tweets that contain an emoji:', ((emojiCount / tweetCount) * 100).toFixed(2));
+    console.log('Top emojis', Object.keys(emojiFrequencyHash).sort((a, b)=> (emojiFrequencyHash[a]>emojiFrequencyHash[b])?1:-1));
 
     pool.exec(containsUrl, [tweet.text])
       .then((result) => {
@@ -108,7 +121,7 @@ else {
   // const { parse } = require('some-js-parsing-library');
   // const script = workerData;
   // parentPort.postMessage(parse(script));
-  console.log(workerData);
-  parentPort.postMessage('hey');
+  // console.log(workerData);
+  // parentPort.postMessage('hey');
 
 }
