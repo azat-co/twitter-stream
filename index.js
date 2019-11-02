@@ -27,8 +27,12 @@ const containsEmoji = (text) => {
   const emojis = emojiData.scan(text);
   return emojis;
 }
+
 const urlRegExpression = /[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)?/gi;
 const urlRegExp = new RegExp(urlRegExpression);
+const imageRegExpression = /(pic.twitter|instagram)\.com/ig;
+const imageRegExp = new RegExp(imageRegExpression);
+let uu = require('url-unshort')();
 
 const containsUrls = (text, urlRegExp) => {
   const urls = text.match(urlRegExp) || [];
@@ -54,9 +58,6 @@ stream.on('tweet', (tweet) => {
   pool.exec(containsUrls, [tweet.text, urlRegExp])
     .then((urls) => {
       if (urls.length > 0) urlCount++;
-      const imageRegExpression = /(pic.twitter|instagram)\.com/ig;
-      const imageRegExp = new RegExp(imageRegExpression);
-      let uu = require('url-unshort')();
       for (let url of urls) {
         uu.expand('http://' + url)
           .then(expandedUrl => {
