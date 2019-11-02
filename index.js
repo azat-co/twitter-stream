@@ -4,6 +4,8 @@ const workerpool = require('workerpool');
 const pool = workerpool.pool();
 const clear = require('clear');
 
+// ADD YOUR key, secret, token and token secret from https://developer.twitter.com/en/apps
+
 const twitInstance = new twit({
   consumer_key: 'CDbHmvzpaY52o8FRk5YYBegLk',
   consumer_secret: 'COnUcLoSPCiJsiVDfGGwqN0W4LTg8ad3NODau3aQ53ZQmMuABC',
