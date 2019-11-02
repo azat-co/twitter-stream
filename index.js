@@ -2,7 +2,8 @@ const twit = require('twit');
 const worker = require('worker_threads');
 const workerpool = require('workerpool');
 const pool = workerpool.pool();
-const emojiHash=require('./emoji-hash.js');
+const emojiHash=require('./emoji-hash.json');
+
 
 const twitInstance = new twit({
   consumer_key: 'CDbHmvzpaY52o8FRk5YYBegLk',
@@ -14,6 +15,7 @@ const twitInstance = new twit({
 
 let tweetCount = 0;
 let urlCount = 0;
+let emojiCount = 0;
 const d1 = Date.now();
 const stream = twitInstance.stream('statuses/sample', { language: 'en' })
 
@@ -23,20 +25,22 @@ const {
   parentPort,
   workerData
 } = require('worker_threads');
-const emojiData = require('./emoji.json');
 
 const containsEmoji = (text) => {
-  for (let char of text) {
-    let hexOfChar=char.charCodeAt(0).toString(16);
-    if (emojiHash[hexOfChar]) {
-      return true;
-    }
-  }
-  return false;
+  const emojiData = require('emoji-data');
+  // console.log(emojiData.scan(text).length)
+  return (emojiData.scan(text).length>0);
+  // for (let char of text) {
+  //   let hexOfChar=char.charCodeAt(0).toString(16);
+  //   if (emojiHash[hexOfChar]) {
+  //     return true;
+  //   }
+  // }
+  // return false;
 }
 
 const containsUrl = (text) => {
-  console.log(text)
+  // console.log(text);
   const urlRegExpression = /[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)?/gi;
   const urlRegExp = new RegExp(urlRegExpression);
 
@@ -48,21 +52,31 @@ if (isMainThread) {
 
   stream.on('tweet', (tweet) => {
     tweetCount++;
-    console.log(tweetCount);
+    console.log('Total stream tweet count:', tweetCount);
     const d2 = Date.now();
     const tweetPerSecond = tweetCount / ((d2 - d1) / 1000);
     console.log('Avg per second:', (tweetPerSecond).toFixed(2));
     console.log('Avg per minute:', (60 * tweetPerSecond).toFixed(2));
     console.log('Avg per hour:', (60 * 60 * tweetPerSecond).toFixed(2));
+    console.log('Percent of tweets that contain a URL:', ((urlCount / tweetCount) * 100).toFixed(2));
+    console.log('Percent of tweets that contain an emoji:', ((emojiCount / tweetCount) * 100).toFixed(2));
 
     pool.exec(containsUrl, [tweet.text])
       .then((result) => {
-        console.log('result', result); // outputs 7
+        // console.log('contains link', result, tweet.text); // outputs 7
         if (result) urlCount++;
-        console.log('Percent of tweets that contain a URL:', ((urlCount / tweetCount) * 100).toFixed(2));
       })
+      .catch((err) => {
+        console.error(err);
+      })
+    pool
       .exec(containsEmoji, [tweet.text])
-      .then(()=>{
+      .then((result)=>{
+        // console.log('contains emoji', result, tweet.text)
+        if (result) {
+          emojiCount++;
+        } else {
+        }
 
       })
       .catch((err) => {

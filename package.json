@@ -9,6 +9,7 @@
   "author": "Azat Mardan",
   "license": "MIT",
   "dependencies": {
+    "emoji-data": "0.2.0",
     "express": "4.17.1",
     "socket.io": "2.3.0",
     "twit": "2.2.11",
