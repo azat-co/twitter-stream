@@ -15,6 +15,7 @@ const twitInstance = new twit({
 });
 
 const emojiFrequencyHash = {};
+const hashtagFrequencyHash = {};
 let tweetCount = 0;
 let imageCount = 0;
 
@@ -33,12 +34,18 @@ const containsEmoji = (text) => {
 
 const urlRegExpression = /[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)?/gi;
 const urlRegExp = new RegExp(urlRegExpression);
+const hashRegExpression = /(^|\B)#(?![0-9_]+\b)([a-zA-Z0-9_]{1,30})(\b|\r)/gi;
+const hashRegExp = new RegExp(hashRegExpression);
 const imageRegExpression = /(pic.twitter|instagram)\.com/ig;
 const imageRegExp = new RegExp(imageRegExpression);
 
 const containsUrls = (text, urlRegExp) => {
   const urls = text.match(urlRegExp) || [];
   return urls;
+}
+const getHashtags = (text, hashRegExp) => {
+  const hashtag = text.match(hashRegExp) || [];
+  return hashtag;
 }
 
 stream.on('tweet', (tweet) => {
@@ -58,6 +65,9 @@ stream.on('tweet', (tweet) => {
     .sort((a, b) => (emojiFrequencyHash[a] < emojiFrequencyHash[b]) ? 1 : -1)
     .slice(0, 10)
     .map((emojiUni) => emojiData.from_unified(emojiUni).render()));
+  console.log('Top hashtags', Object.keys(hashtagFrequencyHash)
+    .sort((a, b) => (hashtagFrequencyHash[a] < hashtagFrequencyHash[b]) ? 1 : -1)
+    .slice(0, 10));
 
   console.log(`
 
@@ -91,6 +101,20 @@ URLs:`);
     }
   }
 
+  // Counting hashtags
+pool.exec(getHashtags, [tweet.text, hashRegExp])
+.then((hashtags) => {
+  for (let hashtag of hashtags) {
+    if (hashtagFrequencyHash[hashtag]) {
+      hashtagFrequencyHash[hashtag] += 1;
+    } else {
+      hashtagFrequencyHash[hashtag] = 1;
+    }
+  }
+})
+.catch((err) => {
+  console.error(err);
+})
   // Counting emojis
   pool.exec(containsEmoji, [tweet.text])
     .then((emojis) => {
