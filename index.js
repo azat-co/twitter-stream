@@ -5,14 +5,9 @@ const pool = workerpool.pool();
 const clear = require('clear');
 
 // ADD YOUR key, secret, token and token secret from https://developer.twitter.com/en/apps
-
-const twitInstance = new twit({
-  consumer_key: 'CDbHmvzpaY52o8FRk5YYBegLk',
-  consumer_secret: 'COnUcLoSPCiJsiVDfGGwqN0W4LTg8ad3NODau3aQ53ZQmMuABC',
-  access_token: '341552391-h30rIwyKnAxTHFt86bKX5ZaFeYRzmfOF5JbaPyJC',
-  access_token_secret: 'idwqMTstgYrcerrL43XwYD1EXOJMTdQxvGKHu5UUSiNU8',
-  timeout_ms: 60 * 1000, // optional HTTP request timeout to apply to all requests.
-});
+const twitterConfig=require('./keys.json');
+twitterConfig.timeout_ms=60 * 1000; // optional HTTP request timeout to apply to all requests.
+const twitInstance = new twit(twitterConfig);
 
 const emojiFrequencyHash = {};
 const hashtagFrequencyHash = {};
