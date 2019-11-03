@@ -47,7 +47,7 @@ npm i
 npm start
 ```
 
-## Testging
+## Testing
 
 ```
 npm test
