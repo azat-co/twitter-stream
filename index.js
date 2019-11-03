@@ -46,7 +46,9 @@ setInterval(() => {
     expandedUrlCount,
     emojiFrequencyHash,
     hashtagFrequencyHash,
-    timeStart
+    timeStart,
+    emojiLimit: 10,
+    hashtagLimit: 10
   })
 }, 100);
 

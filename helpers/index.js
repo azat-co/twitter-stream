@@ -29,14 +29,14 @@ module.exports.logger = (data) => {
     ((data.imageCount / data.tweetCount) * 100).toFixed(2));
   console.log('Tweets that contain an emoji: %s%', ((data.emojiCount / data.tweetCount) * 100).toFixed(2));
   // console.log(emojiFrequencyHash)
-  console.log('Top emojis', Object.keys(data.emojiFrequencyHash)
+  console.log('Top %s emojis', data.emojiLimit, Object.keys(data.emojiFrequencyHash)
     .sort((a, b) => (data.emojiFrequencyHash[a] < data.emojiFrequencyHash[b]) ? 1 : -1)
-    .slice(0, 10)
+    .slice(0, data.emojiLimit)
     .map((emojiUni) => emojiData.from_unified(emojiUni).render()));
   const hashtags = Object.keys(data.hashtagFrequencyHash);
-  console.log('Top hashtags (out of %s)', hashtags.length,
+  console.log('Top %s hashtags (out of %s)', data.hashtagLimit, hashtags.length,
     hashtags
       .sort((a, b) => (data.hashtagFrequencyHash[a] < data.hashtagFrequencyHash[b]) ? 1 : -1)
-      .slice(0, 10));
+      .slice(0, data.hashtagLimit));
   return true;
 }
