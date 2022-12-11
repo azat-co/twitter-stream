@@ -12,7 +12,7 @@
   "dependencies": {
     "clear": "0.1.0",
     "emoji-data": "0.2.0",
-    "express": "4.17.1",
+    "express": "4.17.3",
     "got": "9.6.0",
     "socket.io": "2.3.0",
     "twit": "2.2.11",
